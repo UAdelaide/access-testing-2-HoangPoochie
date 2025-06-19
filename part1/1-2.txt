@@ -1,0 +1,54 @@
+No repeating groups ➜ 1 NF
+
+No partial dependencies (because each PK is a single column) ➜ 2 NF
+
+No transitive dependencies via non-prime attributes ➜ 3 NF 
+
+a) Users
+
+PK: UsersID (single-column surrogate key).
+
+Columns: username, email, password, created_at.
+
+1NF: Each column is atomic (e.g., username is one value, not a list).
+
+2NF: Single-column PK means every non-key attribute depends on that PK (no partial).
+
+3NF: No non-key column depends on another non-key column. For instance, created_at doesn’t determine username; all non-key fields derive directly from the user row identity.
+
+b) Books
+
+PK: BookID (surrogate) and/or natural key ISBN (unique).
+
+Columns: Title, Author, ISBN (unique).
+
+1NF: Atomic columns.
+
+2NF: Single-column PK ensures non-key columns depend on whole key. If using BookID as PK, then Title, Author, ISBN depend on that ID. If instead you choose ISBN as PK, then Title and Author depend on ISBN directly.
+
+3NF: No non-key column depends on another non-key column except via a prime attribute: e.g., if PK is BookID, there is a functional dependency BookID → ISBN → (Title, Author). But since ISBN is a candidate key (prime attribute) if declared unique, the dependency ISBN → Title is not a transitive dependency via a non-prime attribute. Either way, you avoid “ISBN determines something else that then determines something else non-key.”
+
+c) Listings
+
+PK: ListID (single-column).
+
+Columns: BookID (FK), SellerID (FK), BuyerID (nullable FK), Price, Posted_at, Sold_at, Status, plus any location fields.
+
+1NF: Each attribute is atomic (e.g., price is one decimal; city stored in one column).
+
+2NF: Single-column PK → no partial dependencies. All attributes describe that particular listing.
+
+3NF: Check that no non-key attribute depends on another non-key attribute. Examples:
+
+Sold_at depends on the fact that this listing was sold (which is part of the same row); it doesn’t determine, say, Price.
+
+Status may be derived from whether BuyerID IS NOT NULL, but you can argue you store it explicitly for convenience; however, since Status is not used to derive any other non-key attribute, and you could omit it or treat it as a derived attribute, it doesn’t violate 3NF. If you want to be strict, you can explain that “Status” is technically derivable but is stored for query efficiency; you can also omit it and derive availability by (BuyerID IS NULL AND Sold_at IS NULL). Either way, there’s no transitive dependency among non-key columns causing redundancy.
+
+Location fields (if stored here) depend on the listing PK, not on another non-key column.
+
+
+In 3NF, no non-key attribute should depend on another non-key attribute. By storing seller_email in Listings, we create a transitive dependency:
+
+seller_id is non-key in Listings (though it is a FK).
+
+seller_email depends on that non-key seller_id rather than directly on listing_id.
